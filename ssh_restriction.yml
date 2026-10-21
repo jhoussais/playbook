@@ -1,26 +1,21 @@
 
 ---
-- name: Limiter SSH a srv-ansible
+- name: Desactiver le mot de passe SSH
   hosts: all
   become: true
-  gather_facts: false
-
-  vars:
-    srv_ansible_ip: "10.84.200.63"
 
   tasks:
-    - name: Autoriser ansible uniquement depuis srv-ansible
-      ansible.builtin.lineinfile:
+    - name: Interdire le mot de passe SSH pour ansible
+      ansible.builtin.blockinfile:
         path: /etc/ssh/sshd_config
-        regexp: '^\s*AllowUsers\s+'
-        line: "AllowUsers ansible@{{ srv_ansible_ip }}"
-        validate: "/usr/sbin/sshd -t -f %s"
-        backup: true
-      notify: Recharger SSH
+        block: |
+          Match User ansible
+              PasswordAuthentication no
+      notify: Redemarrer SSH
 
   handlers:
-    - name: Recharger SSH
+    - name: Redemarrer SSH
       ansible.builtin.service:
         name: sshd
-        state: reloaded
+        state: restarted
 

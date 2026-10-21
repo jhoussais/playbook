@@ -1,0 +1,26 @@
+
+---
+- name: Limiter SSH a srv-ansible
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars:
+    srv_ansible_ip: "10.84.200.63"
+
+  tasks:
+    - name: Autoriser ansible uniquement depuis srv-ansible
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^\s*AllowUsers\s+'
+        line: "AllowUsers ansible@{{ srv_ansible_ip }}"
+        validate: "/usr/sbin/sshd -t -f %s"
+        backup: true
+      notify: Recharger SSH
+
+  handlers:
+    - name: Recharger SSH
+      ansible.builtin.service:
+        name: sshd
+        state: reloaded
+

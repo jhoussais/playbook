@@ -1,0 +1,7 @@
+all:
+  children:
+    lan:
+      hosts:
+        staging:
+          ansible_host: 10.84.200.65
+          ansible_user: ansible

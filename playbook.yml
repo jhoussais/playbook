@@ -1,0 +1,20 @@
+---
+- name: Installer et demarrer BIND sur Oracle Linux
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Installer BIND sur Oracle Linux
+      ansible.builtin.dnf:
+        name: bind
+        state: present
+
+    - name: Activer et demarrer BIND
+      ansible.builtin.service:
+        name: named
+        state: started
+        enabled: true
+
+
+

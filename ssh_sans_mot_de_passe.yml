@@ -1,28 +1,12 @@
 
 ---
-- name: Desactiver le mot de passe SSH pour ansible
+- name: Désactiver le mot de passe du compte ansible
   hosts: all
   become: true
-  gather_facts: false
 
   tasks:
-    - name: Configurer SSH pour le compte ansible
-      ansible.builtin.copy:
-        dest: /etc/ssh/sshd_config.d/00-ansible-security.conf
-        owner: root
-        group: root
-        mode: "0600"
-        content: |
-          Match User ansible
-              PasswordAuthentication no
-              KbdInteractiveAuthentication no
-        backup: true
-        validate: "/usr/sbin/sshd -t -f %s"
-      notify: Recharger SSH
-
-  handlers:
-    - name: Recharger SSH
-      ansible.builtin.service:
-        name: sshd
-        state: reloaded
+    - name: Verrouiller le mot de passe de ansible
+      ansible.builtin.user:
+        name: ansible
+        password_lock: true
 

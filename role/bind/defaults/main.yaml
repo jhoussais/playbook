@@ -1,0 +1,9 @@
+
+---
+bind_package: bind
+bind_utils_package: bind-utils
+bind_service: named
+
+bind_forwarders:
+  - "10.64.0.3"
+  - "10.100.0.3"

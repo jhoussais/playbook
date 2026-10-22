@@ -1,0 +1,9 @@
+
+---
+- name: Configurer BIND sur Oracle Linux
+  hosts: lan
+  become: true
+  gather_facts: true
+
+  roles:
+    - bind

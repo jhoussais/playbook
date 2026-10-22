@@ -1,0 +1,24 @@
+
+---
+- name: Installer BIND et ses utilitaires
+  ansible.builtin.dnf:
+    name:
+      - "{{ bind_package }}"
+      - "{{ bind_utils_package }}"
+    state: present
+
+- name: Déployer la configuration de BIND
+  ansible.builtin.template:
+    src: named.conf.j2
+    dest: /etc/named.conf
+    owner: root
+    group: named
+    mode: "0640"
+    validate: "/usr/sbin/named-checkconf %s"
+  notify: Redémarrer BIND
+
+- name: Activer et démarrer BIND
+  ansible.builtin.service:
+    name: "{{ bind_service }}"
+    state: started
+    enabled: true

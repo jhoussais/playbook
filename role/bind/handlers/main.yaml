@@ -1,0 +1,6 @@
+
+---
+- name: Redémarrer BIND
+  ansible.builtin.service:
+    name: named
+    state: restarted

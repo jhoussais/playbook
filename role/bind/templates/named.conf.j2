@@ -9,14 +9,13 @@ options {
     recursion yes;
 
     forwarders {
-{% for dns in bind_forwarders %}
-        {{ dns }};
-{% endfor %}
-    };
+    10.64.0.3;
+    10.100.0.3;
+};
 
     forward only;
 
-    dnssec-validation auto;
+    dnssec-validation no;
 };
 
 include "/etc/named.rfc1912.zones";

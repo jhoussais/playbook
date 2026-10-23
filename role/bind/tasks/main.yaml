@@ -1,4 +1,3 @@
-
 ---
 - name: Installer BIND et ses utilitaires
   ansible.builtin.dnf:
@@ -7,18 +6,71 @@
       - "{{ bind_utils_package }}"
     state: present
 
-- name: Déployer la configuration de BIND
-  ansible.builtin.template:
-    src: named.conf.j2
-    dest: /etc/named.conf
+- name: Sauvegarder la configuration actuelle
+  ansible.builtin.copy:
+    src: /etc/named.conf
+    dest: /etc/named.conf.ansible-backup
+    remote_src: true
+    force: true
     owner: root
     group: named
     mode: "0640"
-    validate: "/usr/sbin/named-checkconf %s"
-  notify: Redémarrer BIND
 
-- name: Activer et démarrer BIND
-  ansible.builtin.service:
-    name: "{{ bind_service }}"
-    state: started
-    enabled: true
+- name: Déployer et contrôler la configuration BIND
+  block:
+    - name: Déployer la nouvelle configuration
+      ansible.builtin.template:
+        src: named.conf.j2
+        dest: /etc/named.conf
+        owner: root
+        group: named
+        mode: "0640"
+        validate: "/usr/sbin/named-checkconf %s"
+      notify: Redémarrer BIND
+
+    - name: Appliquer les handlers avant les tests
+      ansible.builtin.meta: flush_handlers
+
+    - name: Vérifier que BIND est actif
+      ansible.builtin.command:
+        argv:
+          - systemctl
+          - is-active
+          - named
+      changed_when: false
+
+    - name: Tester la résolution DNS locale
+      ansible.builtin.command:
+        argv:
+          - dig
+          - +time=3
+          - +tries=1
+          - "@127.0.0.1"
+          - example.com
+      register: dns_test
+      changed_when: false
+      failed_when: >
+        dns_test.rc != 0 or
+        'status: NOERROR' not in dns_test.stdout or
+        'ANSWER: 0' in dns_test.stdout
+
+  rescue:
+    - name: Restaurer l'ancienne configuration
+      ansible.builtin.copy:
+        src: /etc/named.conf.ansible-backup
+        dest: /etc/named.conf
+        remote_src: true
+        owner: root
+        group: named
+        mode: "0640"
+
+    - name: Redémarrer BIND avec l'ancienne configuration
+      ansible.builtin.service:
+        name: named
+        state: restarted
+
+    - name: Signaler l'échec du déploiement
+      ansible.builtin.fail:
+        msg: >-
+          Le déploiement ou le test DNS a échoué.
+          L'ancienne configuration a été restaurée.
